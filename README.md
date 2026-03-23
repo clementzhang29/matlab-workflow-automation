@@ -1,98 +1,253 @@
-# 🤖 MATLAB Signal Processing Workflow Automation
+# 🤖 AI Agent 软件联合调试自动化框架
 
-[![OpenClaw](https://img.shields.io/badge/Powered%20by-OpenClaw-blue.svg)](https://github.com/openclaw)
-[![MATLAB](https://img.shields.io/badge/MATLAB-R2020a+-orange.svg)](https://www.mathworks.com/)
+> 🎯 基于OpenClaw的自动化工作流：AI生成代码 → 本地运行 → 错误修复 → 成功运行
 
-> 🎯 自动化工作流：从ChatGPT获取MATLAB代码 → 本地运行 → 错误修复 → 成功运行
+本框架提供了一套通用的自动化方法，可以将AI生成的代码在本地软件中自动运行、调试和修复。
 
-本项目提供了一套完整的自动化工作流，用于将ChatGPT生成的MATLAB信号处理代码在本地自动运行、调试和修复。
+---
 
-## 📋 功能特点
+## 📋 支持的软件
 
-- ✅ **自动化代码获取** - 从ChatGPT网页版自动获取MATLAB代码
-- ✅ **本地运行调试** - 自动执行MATLAB脚本并捕获输出
-- ✅ **错误自动修复** - 将运行错误发回ChatGPT修复，最多8次迭代
-- ✅ **完整工作流闭环** - 实现代码生成→运行→修复的自动化
+| 软件 | 状态 | 脚本 |
+|------|------|------|
+| 🔬 MATLAB | ✅ 已支持 | chatgpt_matlab_workflow.ps1 |
+| 🐍 Python | 🔄 可扩展 | (待开发) |
+| 🔧 Simulink | 🔄 可扩展 | (待开发) |
+| 📡 FPGA工具 | 🔄 可扩展 | (待开发) |
 
-## 🔄 工作流程
+---
+
+## 🚀 在OpenClaw中使用
+
+### 步骤1: 安装Skill
+
+将 `skill_matlab_workflow.md` 复制到OpenClaw的skills目录：
+
+```bash
+cp skill_matlab_workflow.md ~/.openclaw/skills/matlab-signal-processing-workflow/SKILL.md
+```
+
+### 步骤2: 触发Skill
+
+当需要MATLAB信号处理时，说出触发词：
+- "帮我创建MATLAB信号处理代码"
+- "从ChatGPT获取MATLAB代码并运行"
+- "生成信号处理报告"
+
+### 步骤3: 自动执行
+
+OpenClaw会自动：
+1. 打开ChatGPT浏览器
+2. 发送代码需求
+3. 复制代码并保存为.m文件
+4. 执行MATLAB
+5. 捕获错误并自动修复（最多8次）
+6. 确认成功运行
+
+---
+
+## 📖 MATLAB工作流详解
+
+### 核心脚本
+
+| 脚本 | 功能 |
+|------|------|
+| `chatgpt_matlab_workflow.ps1` | 核心自动化脚本 |
+| `run_gui_test.m` | MATLAB错误捕获脚本 |
+| `MATLAB_Workflow_Skill.html` | 完整使用教程 |
+
+### 执行流程
 
 ```
-[发送需求] → [ChatGPT生成] → [保存.m文件] → [运行MATLAB]
-                                                      ↓
-                                            ┌─────────────┐
-                                            │  有错误?     │
-                                            └─────────────┘
-                               ↓                    ↓
-                          [修复成功]             [发回修复]
-                               │                    │
-                               └────── 最多8次 ─────┘
+用户请求 → Skill触发 → 浏览器自动化 
+         → ChatGPT获取代码 → 复制粘贴
+         → 保存.m文件 → 执行MATLAB
+         → 捕获输出 → 成功/错误?
+         → 修复迭代(最多8次) → 完成
 ```
 
-## 🚀 快速开始
+---
 
-### 环境要求
+## 🔄 泛化：添加新软件支持
 
-- MATLAB R2020a 或更高版本
-- OpenClaw 自动化框架
-- ChatGPT 账号
+### 1. 创建软件配置
 
-### 使用步骤
+```powershell
+# config.json
+{
+    "software": "Python",
+    "exe_path": "python.exe",
+    "file_extension": ".py",
+    "workspace": "C:\\Users\\...\\python_scripts",
+    "run_command": "python {filename}",
+    "error_patterns": [
+        "Error:",
+        "Traceback (most recent call last):"
+    ]
+}
+```
 
-1. **打开ChatGPT** - 使用浏览器自动化工具打开 chat.openai.com
-2. **发送需求** - 描述你需要生成的MATLAB代码
-3. **复制代码** - 点击复制按钮获取完整代码
-4. **保存文件** - 将代码保存为 `.m` 文件
-5. **运行测试** - 执行MATLAB并检查结果
+### 2. 创建运行脚本
 
-详细使用说明请参考 [MATLAB_Workflow_Skill.html](./MATLAB_Workflow_Skill.html)
+```powershell
+# run_software_test.ps1
+param(
+    [string]$software = "python",
+    [string]$scriptPath
+)
 
-## 📁 项目结构
+# 启动软件
+$process = Start-Process -FilePath "python.exe" `
+    -ArgumentList $scriptPath `
+    -NoNewWindow -PassThru -Wait
+
+# 捕获输出
+if ($process.ExitCode -ne 0) {
+    # 提取错误信息
+    $errorMsg = $process.StandardError.ReadToEnd()
+    # 返回错误进行修复
+    return @{success=$false; error=$errorMsg}
+}
+
+return @{success=$true}
+```
+
+### 3. 创建错误修复循环
+
+```powershell
+# auto_fix_loop.ps1
+param(
+    [int]$maxIterations = 8
+)
+
+for ($i = 1; $i -le $maxIterations; $i++) {
+    Write-Host "迭代 $i/$maxIterations"
+    
+    # 运行代码
+    $result = Run-SoftwareCode
+    
+    if ($result.success) {
+        Write-Host "成功!" -ForegroundColor Green
+        break
+    } else {
+        # 发送错误到AI修复
+        $fixedCode = Send-ToAI -error $result.error
+        Save-Code -content $fixedCode
+    }
+}
+```
+
+---
+
+## 🎯 快速开始示例
+
+### MATLAB信号处理
+
+```powershell
+# 1. 打开ChatGPT
+browser open https://chat.openai.com
+
+# 2. 发送需求
+browser type "请帮我生成一个MATLAB GUI程序，用于..."
+
+# 3. 复制代码
+clipboard copy
+
+# 4. 保存并运行
+cd C:\Users\zhangchun\Documents\MATLAB
+matlab.exe -r "my_script; exit"
+```
+
+### Python数据分析
+
+```powershell
+# 1. 打开ChatGPT
+browser open https://chat.openai.com
+
+# 2. 发送需求
+browser type "请帮我生成Python数据分析代码..."
+
+# 3. 复制代码
+clipboard copy
+
+# 4. 保存并运行
+python analysis.py
+```
+
+---
+
+## 📁 项目文件说明
 
 ```
 .
-├── MATLAB_Workflow_Skill.html   # 完整的工作流说明文档
-├── README.md                    # 本文件
-└── .git/                       # Git仓库
+├── README.md                      # 本文件
+├── skill_matlab_workflow.md      # MATLAB Workflow Skill定义
+├── MATLAB_Workflow_Skill.html    # 完整HTML教程
+│
+├── 核心脚本/
+│   ├── chatgpt_matlab_workflow.ps1    # MATLAB自动化主脚本
+│   ├── run_gui_test.m                 # MATLAB错误捕获
+│   └── get_clipboard.ps1              # 剪贴板工具
+│
+├── 辅助脚本/
+│   ├── chatgpt_matlab_browser_automation.ps1
+│   ├── chatgpt_matlab_full_automation.ps1
+│   └── send_to_matlab.ps1
+│
+└── 测试脚本/
+    ├── run_gui.ps1
+    ├── test_error_flow.ps1
+    └── test_matlab_error.ps1
 ```
 
-## 💡 应用场景
+---
 
-本工作流不仅适用于MATLAB，还可用于以下软件的联合调试：
+## 🔧 环境配置
 
-| 软件 | 场景 |
-|------|------|
-| 🔬 **Python** | 数据分析、机器学习脚本 |
-| 🔧 **Simulink** | 系统仿真模型 |
-| 📡 **FPGA工具** | Vivado/Quartus联合调试 |
-| 🎮 **ROS** | 机器人仿真 |
-| 📊 **LabVIEW** | 虚拟仪器控制 |
+### OpenClaw配置
 
-## 🔧 核心技术
-
-- **浏览器自动化** - 通过OpenClaw控制ChatGPT网页
-- **进程管理** - MATLAB进程启动、监控、关闭
-- **错误捕获** - 完整的错误堆栈跟踪
-- **迭代修复** - 最多8次的自动修复机制
-
-## 📝 错误处理示例
-
-### 示例1: 函数名错误
-
-```
-错误: 未定义函数 'uispinner_BUG'
-修复: 将 uispinner_BUG 改为 uispinner
+```yaml
+# config.yaml
+skills:
+  matlab-workflow:
+    enabled: true
+    matlab_path: D:\Program Files\MATLAB\R2025b\bin\matlab.exe
+    workspace: C:\Users\zhangchun\Documents\MATLAB
+    
+browser:
+  chatgpt_url: https://chat.openai.com
+  headless: false
 ```
 
-### 示例2: 路径错误
+### MATLAB配置
 
+```matlab
+% startup.m
+addpath('C:\Users\zhangchun\Documents\MATLAB');
 ```
-错误: 无法找到文件
-修复: 检查并修正文件路径
-```
+
+---
+
+## 💡 最佳实践
+
+1. **错误捕获要完整** - 包含行号、堆栈、错误类型
+2. **迭代次数限制** - 最多8次，避免无限循环
+3. **版本兼容性** - 检查软件版本，选择兼容的代码
+4. **结果验证** - 实际运行并验证输出
+5. **日志记录** - 记录每次迭代的结果
+
+---
 
 ## 🤝 贡献指南
 
-欢迎提交Issue和Pull Request！
+欢迎添加更多软件的支持！
+
+1. Fork本仓库
+2. 创建新分支 `git checkout -b software-name`
+3. 添加软件配置文件和脚本
+4. 提交Pull Request
+
+---
 
 ## 📜 许可证
 
@@ -101,7 +256,3 @@ MIT License
 ## 👨‍💻 作者
 
 - zl (专利工程师) - OpenClaw Agent
-
----
-
-*⭐ 如果这个项目对你有帮助，请给个Star！*
