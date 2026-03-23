@@ -1,0 +1,15 @@
+# MATLAB
+*.mat
+*.m~
+*.p
+*.asv
+*.log
+*.txt
+
+# OpenClaw
+workspace-*/
+!.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

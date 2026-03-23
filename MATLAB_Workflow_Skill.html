@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATLAB信号处理Workflow - 自动化工作流</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        section {
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #1e3c72;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px;
+            font-size: 1.4em;
+        }
+        .overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card h4 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .card .number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        .flow-step {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .flow-arrow {
+            font-size: 24px;
+            color: #667eea;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .code-block .comment {
+            color: #6a9955;
+        }
+        .code-block .keyword {
+            color: #569cd6;
+        }
+        .code-block .string {
+            color: #ce9178;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f7fa;
+        }
+        .highlight {
+            background: linear-gradient(135deg, #fff1eb, #ace0f9);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #ffc107;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #28a745;
+            margin: 15px 0;
+        }
+        .error-box {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #dc3545;
+            margin: 15px 0;
+        }
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .iteration-diagram {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .iteration-diagram img {
+            max-width: 100%;
+            height: auto;
+        }
+        footer {
+            background: #1e3c72;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 MATLAB信号处理Workflow</h1>
+            <p>自动化工作流：从ChatGPT获取代码 → 本地运行 → 错误修复 → 成功运行</p>
+        </header>
+        
+        <div class="content">
+            <!-- 概述 -->
+            <section id="overview">
+                <h2>📋 概述</h2>
+                <div class="overview">
+                    <div class="card">
+                        <h4><span class="number">1</span>获取代码</h4>
+                        <p>从ChatGPT网页版获取MATLAB信号处理代码</p>
+                    </div>
+                    <div class="card">
+                        <h4><span class="number">2</span>保存文件</h4>
+                        <p>将代码保存为.m文件到MATLAB工作目录</p>
+                    </div>
+                    <div class="card">
+                        <h4><span class="number">3</span>运行调试</h4>
+                        <p>执行MATLAB并捕获输出/错误</p>
+                    </div>
+                    <div class="card">
+                        <h4><span class="number">4</span>错误修复</h4>
+                        <p>将错误发回ChatGPT修复，最多8次迭代</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 工作流程 -->
+            <section id="workflow">
+                <h2>🔄 完整工作流程</h2>
+                
+                <div class="flow">
+                    <div class="flow-step">1. 打开ChatGPT</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">2. 发送需求</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">3. 复制代码</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">4. 保存.m文件</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">5. 运行MATLAB</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">6. 捕获错误</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">7. 修复迭代</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">✅ 成功</div>
+                </div>
+            </section>
+
+            <!-- 详细步骤 -->
+            <section id="steps">
+                <h2>📝 详细步骤说明</h2>
+                
+                <h3>阶段1: 获取代码</h3>
+                <ol>
+                    <li>使用浏览器工具打开ChatGPT网页 (chat.openai.com)</li>
+                    <li>输入MATLAB代码需求描述</li>
+                    <li>等待代码生成完成</li>
+                    <li>点击"复制"按钮获取完整代码</li>
+                </ol>
+                
+                <h3>阶段2: 本地运行迭代</h3>
+                
+                <h4>步骤1: 保存.m文件</h4>
+                <div class="code-block">
+<span class="comment">% 将复制的代码保存到MATLAB工作目录</span>
+<span class="comment">% 例如: C:\Users\zhangchun\Documents\MATLAB\</span>
+                </div>
+                
+                <h4>步骤2: 创建错误捕获脚本</h4>
+                <div class="code-block">
+<span class="comment">% 文件名: run_gui_test.m</span>
+<span class="keyword">fid</span> = fopen(<span class="string">'C:\Users\zhangchun\Documents\MATLAB\run_result.txt'</span>,<span class="string">'w'</span>);
+<span class="keyword">try</span>
+    your_function_name;  <span class="comment">% 替换为你的函数名</span>
+    fprintf(fid,<span class="string">'SUCCESS: GUI launched\n'</span>);
+<span class="keyword">catch</span> ME
+    fprintf(fid,<span class="string">'ERROR: %s\n'</span>,ME.message);
+    <span class="keyword">for</span> i=1:min(8,length(ME.stack))
+        fprintf(fid,<span class="string">'Stack %d: %s line %d\n'</span>,i,ME.stack(i).name,ME.stack(i).line);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+fclose(fid);
+exit
+                </div>
+                
+                <h4>步骤3: 执行MATLAB</h4>
+                <div class="code-block">
+<span class="comment"># PowerShell命令</span>
+cd <span class="string">'C:\Users\zhangchun\Documents\MATLAB'</span>
+D:\<span class="string">Program Files</span>\MATLAB\R2025b\bin\matlab.exe -nosplash -r run_gui_test -logfile matlab_log.txt
+                </div>
+                
+                <h4>步骤4: 检查结果</h4>
+                <div class="code-block">
+<span class="comment">% 读取运行结果</span>
+Get-Content <span class="string">'C:\Users\zhangchun\Documents\MATLAB\run_result.txt'</span>
+                </div>
+                
+                <h3>阶段3: 错误处理迭代</h3>
+                <div class="error-box">
+                    <strong>⚠️ 如果运行出现错误:</strong>
+                    <ol>
+                        <li>捕获完整错误信息（错误消息 + 堆栈跟踪）</li>
+                        <li>将错误信息发送给ChatGPT</li>
+                        <li>请求修复代码</li>
+                        <li>获取修复后的代码</li>
+                        <li>保存并重新运行</li>
+                        <li>最多迭代8次</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- 迭代流程图 -->
+            <section id="iteration">
+                <h2>🔁 迭代流程图</h2>
+                <div class="iteration-diagram">
+                    <pre style="font-family: monospace; font-size: 14px; line-height: 1.8;">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        MATLAB代码生成迭代流程                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+    [发送问题]     [获取代码]     [保存.m文件]     [运行MATLAB]
+        │              │              │                 │
+        └──────────────┴──────────────┴─────────────────┘
+                                                        │
+                                    ┌───────────────────┴───────────────────┐
+                                    │                                       │
+                              ┌──────▼──────┐                          ┌──────▼──────┐
+                              │   有错误?    │                          │   成功运行   │
+                              └──────┬──────┘                          └─────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+              ┌──────▼──────┐                 ┌──────▼──────┐
+              │  修复成功   │                 │   发回修复   │
+              └──────┬──────┘                 └──────┬──────┘
+                    │                               │
+                    └───────────┬───────────────────┘
+                                │
+                        ┌───────▼───────┐
+                        │  最多8次迭代  │
+                        └───────────────┘
+                    </pre>
+                </div>
+                
+                <table>
+                    <tr>
+                        <th>迭代次数</th>
+                        <th>操作</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>第1次</td>
+                        <td>运行 → 捕获错误</td>
+                        <td>记录错误信息</td>
+                    </tr>
+                    <tr>
+                        <td>第2次</td>
+                        <td>发回修复 → 运行</td>
+                        <td>验证修复</td>
+                    </tr>
+                    <tr>
+                        <td>...</td>
+                        <td>重复迭代</td>
+                        <td>逐步解决所有问题</td>
+                    </tr>
+                    <tr>
+                        <td>第8次</td>
+                        <td>最终修复</td>
+                        <td>如果仍失败则放弃</td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- 环境配置 -->
+            <section id="config">
+                <h2>⚙️ 环境配置</h2>
+                
+                <table>
+                    <tr>
+                        <th>配置项</th>
+                        <th>说明</th>
+                        <th>示例</th>
+                    </tr>
+                    <tr>
+                        <td>MATLAB路径</td>
+                        <td>MATLAB安装目录</td>
+                        <td>D:\Program Files\MATLAB\R2025b\bin\matlab.exe</td>
+                    </tr>
+                    <tr>
+                        <td>工作目录</td>
+                        <td>代码保存位置</td>
+                        <td>C:\Users\zhangchun\Documents\MATLAB</td>
+                    </tr>
+                    <tr>
+                        <td>输出目录</td>
+                        <td>日志和结果保存</td>
+                        <td>与工作目录相同</td>
+                    </tr>
+                </table>
+                
+                <div class="warning">
+                    <strong>⚠️ 注意事项:</strong>
+                    <ul>
+                        <li>MATLAB版本建议R2020a及以上</li>
+                        <li>确保MATLAB路径正确</li>
+                        <li>工作目录需要有写入权限</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 常用命令 -->
+            <section id="commands">
+                <h2>⌨️ 常用命令</h2>
+                
+                <h3>PowerShell命令</h3>
+                <div class="code-block">
+<span class="comment"># 启动MATLAB并运行脚本</span>
+Start-Process -FilePath <span class="string">'D:\Program Files\MATLAB\R2025b\bin\matlab.exe'</span> `
+    -ArgumentList <span class="string">'-nosplash'</span>,<span class="string">'-r'</span>,<span class="string">'your_script; exit'</span> `
+    -WindowStyle Normal
+
+<span class="comment"># 带日志输出运行</span>
+cd <span class="string">'C:\Users\zhangchun\Documents\MATLAB'</span>
+D:\<span class="string">Program Files</span>\MATLAB\R2025b\bin\matlab.exe -nosplash -r run_test -logfile log.txt
+
+<span class="comment"># 关闭MATLAB</span>
+Stop-Process -Name MATLAB -Force -ErrorAction SilentlyContinue
+
+<span class="comment"># 检查MATLAB进程</span>
+Get-Process -Name MATLAB -ErrorAction SilentlyContinue | Select-Object Id, ProcessName
+                </div>
+            </section>
+
+            <!-- 错误示例 -->
+            <section id="examples">
+                <h2>📌 错误处理示例</h2>
+                
+                <h3>示例1: 函数名错误</h3>
+                <div class="error-box">
+                    <strong>错误信息:</strong><br>
+                    ERROR: 未定义与 'matlab.ui.container.GridLayout' 类型的输入参数相对应的函数 'uispinner_BUG'
+                </div>
+                <div class="success">
+                    <strong>修复方法:</strong><br>
+                    将 <code>uispinner_BUG</code> 改为正确的 <code>uispinner</code>
+                </div>
+                
+                <h3>示例2: 路径错误</h3>
+                <div class="error-box">
+                    <strong>错误信息:</strong><br>
+                    Error using uigetfile<br>
+                    无法找到文件
+                </div>
+                <div class="success">
+                    <strong>修复方法:</strong><br>
+                    检查文件路径是否正确，确保文件存在
+                </div>
+            </section>
+
+            <!-- 注意事项 -->
+            <section id="notes">
+                <h2>📎 注意事项</h2>
+                
+                <div class="highlight">
+                    <ul>
+                        <li><strong>每个环节单独一个.m文件</strong> - 便于调试和定位问题</li>
+                        <li><strong>每个环节打印中间结果</strong> - 到命令行或文件</li>
+                        <li><strong>捕获完整错误信息</strong> - 包括错误行号和堆栈跟踪</li>
+                        <li><strong>MATLAB迭代最多8次</strong> - 总迭代最多15次</li>
+                        <li><strong>验证GUI实际运行</strong> - 检查MATLAB进程是否存在</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 常见问题 -->
+            <section id="faq">
+                <h2>❓ 常见问题</h2>
+                
+                <h3>Q1: 代码复制不完整怎么办?</h3>
+                <p>答: 可以在ChatGPT中要求"生成完整代码不要截断"，或者分段获取代码。</p>
+                
+                <h3>Q2: MATLAB启动很慢怎么办?</h3>
+                <p>答: 使用 <code>-nosplash</code> 参数跳过启动画面，或使用 <code>-automation</code> 参数。</p>
+                
+                <h3>Q3: 错误信息是乱码怎么办?</h3>
+                <p>答: 检查MATLAB和系统编码设置，建议使用UTF-8编码。</p>
+                
+                <h3>Q4: 8次迭代后仍失败怎么办?</h3>
+                <p>答: 可能需求本身有问题，建议简化需求或分步骤实现。</p>
+            </section>
+
+            <!-- 总结 -->
+            <section id="summary">
+                <h2>🎯 总结</h2>
+                <div class="success">
+                    <p><strong>本Workflow实现了:</strong></p>
+                    <ul>
+                        <li>✅ ChatGPT代码生成</li>
+                        <li>✅ 本地MATLAB运行</li>
+                        <li>✅ 自动化错误捕获</li>
+                        <li>✅ 迭代修复机制</li>
+                        <li>✅ 完整工作流闭环</li>
+                    </ul>
+                    <p>通过这个自动化流程，可以高效地将ChatGPT生成的MATLAB代码在本地运行并修复错误，大大提高了开发效率。</p>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>📅 创建日期: 2026-03-23 | 🔧 MATLAB Signal Processing Workflow Skill</p>
+            <p>基于 OpenClaw 自动化框架</p>
+        </footer>
+    </div>
+</body>
+</html>
