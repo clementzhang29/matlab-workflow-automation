@@ -255,4 +255,4 @@ MIT License
 
 ## 👨‍💻 作者
 
-- zl (专利工程师) - OpenClaw Agent
+-zc - OpenClaw Agent
