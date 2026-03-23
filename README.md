@@ -100,7 +100,7 @@ MIT License
 
 ## 👨‍💻 作者
 
-- OpenClaw Agent: zl (专利工程师)
+- zl (专利工程师) - OpenClaw Agent
 
 ---
 
